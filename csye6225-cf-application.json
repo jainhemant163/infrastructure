@@ -1,0 +1,577 @@
+{
+    "AWSTemplateFormatVersion":"2010-09-09",
+    "Parameters":{
+       "StackName":{
+          "Type":"String",
+          "Description":"Please enter string for stack name"
+       },
+       "awsregion":{
+          "Type":"String",
+          "Description":"Please enter string for region"
+       },
+       "Subnet1CidrBlock":{
+          "Type":"String",
+          "Description":"Please enter string for Subnet1CidrBlock"
+       },
+       "Subnet2CidrBlock":{
+          "Type":"String",
+          "Description":"Please enter string for Subnet2CidrBlock"
+       },
+       "Subnet3CidrBlock":{
+          "Type":"String",
+          "Description":"Please enter string for Subnet3CidrBlock"
+       },
+       "VPCCidrBlock":{
+          "Type":"String",
+          "Description":"Please enter string for VPCCidrBlock"
+       },
+       "sourceami":{
+          "Type":"String",
+          "Description":"Please enter string for sourceami"
+       },
+       "BucketName":{
+          "Type":"String",
+          "Description":"Please enter string for BucketName"
+       },
+       "AvailabilityZone1":{
+          "Type":"String",
+          "AllowedValues":[
+             "a",
+             "b",
+             "c"
+          ]
+       },
+       "AvailabilityZone2":{
+          "Type":"String",
+          "AllowedValues":[
+             "a",
+             "b",
+             "c"
+          ]
+       },
+       "AvailabilityZone3":{
+          "Type":"String",
+          "AllowedValues":[
+             "a",
+             "b",
+             "c"
+          ]
+       }
+    },
+    "Resources":{
+       "myvpcstack":{
+          "Type":"AWS::EC2::VPC",
+          "Properties":{
+             "CidrBlock":{
+                "Ref":"VPCCidrBlock"
+             },
+             "EnableDnsSupport":"true",
+             "EnableDnsHostnames":"true",
+             "Tags":[
+                {
+                   "Key":"Name",
+                   "Value":{
+                      "Fn::Join":[
+                         "-",
+                         [
+                            {
+                               "Ref":"StackName"
+                            },
+                            "csye6225-vpc"
+                         ]
+                      ]
+                   }
+                }
+             ]
+          }
+       },
+       "mySubnet1":{
+          "Type":"AWS::EC2::Subnet",
+          "Properties":{
+             "VpcId":{
+                "Ref":"myvpcstack"
+             },
+             "CidrBlock":{
+                "Ref":"Subnet1CidrBlock"
+             },
+             "AvailabilityZone":{
+                "Fn::Join":[
+                   "",
+                   [
+                      {
+                         "Ref":"awsregion"
+                      },
+                      {
+                         "Ref":"AvailabilityZone1"
+                      }
+                   ]
+                ]
+             },
+             "Tags":[
+                {
+                   "Key":"Name",
+                   "Value":"subnet1"
+                }
+             ]
+          }
+       },
+       "mySubnet2":{
+          "Type":"AWS::EC2::Subnet",
+          "Properties":{
+             "VpcId":{
+                "Ref":"myvpcstack"
+             },
+             "CidrBlock":{
+                "Ref":"Subnet2CidrBlock"
+             },
+             "AvailabilityZone":{
+                "Fn::Join":[
+                   "",
+                   [
+                      {
+                         "Ref":"awsregion"
+                      },
+                      {
+                         "Ref":"AvailabilityZone2"
+                      }
+                   ]
+                ]
+             },
+             "Tags":[
+                {
+                   "Key":"Name",
+                   "Value":"subnet2"
+                }
+             ]
+          }
+       },
+       "mySubnet3":{
+          "Type":"AWS::EC2::Subnet",
+          "Properties":{
+             "VpcId":{
+                "Ref":"myvpcstack"
+             },
+             "CidrBlock":{
+                "Ref":"Subnet3CidrBlock"
+             },
+             "AvailabilityZone":{
+                "Fn::Join":[
+                   "",
+                   [
+                      {
+                         "Ref":"awsregion"
+                      },
+                      {
+                         "Ref":"AvailabilityZone3"
+                      }
+                   ]
+                ]
+             },
+             "Tags":[
+                {
+                   "Key":"Name",
+                   "Value":"subnet3"
+                }
+             ]
+          }
+       },
+       "myInternetGateway":{
+          "Type":"AWS::EC2::InternetGateway"
+       },
+       "AttachGateway":{
+          "Type":"AWS::EC2::VPCGatewayAttachment",
+          "Properties":{
+             "VpcId":{
+                "Ref":"myvpcstack"
+             },
+             "InternetGatewayId":{
+                "Ref":"myInternetGateway"
+             }
+          }
+       },
+       "myRouteTable":{
+          "Type":"AWS::EC2::RouteTable",
+          "Properties":{
+             "VpcId":{
+                "Ref":"myvpcstack"
+             },
+             "Tags":[
+                {
+                   "Key":"Name",
+                   "Value":{
+                      "Fn::Join":[
+                         "-",
+                         [
+                            {
+                               "Ref":"StackName"
+                            },
+                            "csye6225-rt"
+                         ]
+                      ]
+                   }
+                }
+             ]
+          }
+       },
+       "mySubnet1RouteTableAssociation":{
+          "Type":"AWS::EC2::SubnetRouteTableAssociation",
+          "Properties":{
+             "SubnetId":{
+                "Ref":"mySubnet1"
+             },
+             "RouteTableId":{
+                "Ref":"myRouteTable"
+             }
+          }
+       },
+       "mySubnet2RouteTableAssociation":{
+          "Type":"AWS::EC2::SubnetRouteTableAssociation",
+          "Properties":{
+             "SubnetId":{
+                "Ref":"mySubnet2"
+             },
+             "RouteTableId":{
+                "Ref":"myRouteTable"
+             }
+          }
+       },
+       "mySubnet3RouteTableAssociation":{
+          "Type":"AWS::EC2::SubnetRouteTableAssociation",
+          "Properties":{
+             "SubnetId":{
+                "Ref":"mySubnet3"
+             },
+             "RouteTableId":{
+                "Ref":"myRouteTable"
+             }
+          }
+       },
+       "myRoute":{
+          "Type":"AWS::EC2::Route",
+          "DependsOn":"AttachGateway",
+          "Properties":{
+             "RouteTableId":{
+                "Ref":"myRouteTable"
+             },
+             "DestinationCidrBlock":"0.0.0.0/0",
+             "GatewayId":{
+                "Ref":"myInternetGateway"
+             }
+          }
+       },
+       "MyS3Policy":{
+          "Type":"AWS::IAM::ManagedPolicy",
+          "Properties":{
+             "ManagedPolicyName":"WebAppS3",
+             "PolicyDocument":{
+                "Version":"2012-10-17",
+                "Statement":[
+                   {
+                      "Action":[
+                         "s3:*"
+                      ],
+                      "Effect":"Allow",
+                      "Resource":[
+                         "arn:aws:s3:::${S3Bucket}",
+                         "arn:aws:s3:::${S3Bucket}/*"
+                      ]
+                   }
+                ]
+             }
+          }
+       },
+       "MyIAMRole":{
+          "Type":"AWS::IAM::Role",
+          "DependsOn": [
+            "MyS3Policy"
+          ],
+          "Properties":{
+             "RoleName":"EC2-CSYE6225",
+             "AssumeRolePolicyDocument":{
+                "Version":"2012-10-17",
+                "Statement":[
+                   {
+                      "Effect":"Allow",
+                      "Principal":{
+                         "Service":[
+                            "ec2.amazonaws.com"
+                         ]
+                      },
+                      "Action":[
+                         "sts:AssumeRole"
+                      ]
+                   }
+                ]
+             },
+             "Tags":[
+                {
+                   "Key":"Name",
+                   "Value":"MyIAMRole"
+                }
+             ],
+             "ManagedPolicyArns":[
+                {
+                   "Ref":"MyS3Policy"
+                }
+             ]
+          }
+       },
+       "MyInstanceProfile":{
+          "Type":"AWS::IAM::InstanceProfile",
+          "DependsOn": [
+            "MyIAMRole"
+          ],
+          "Properties":{
+             "Path":"/",
+             "Roles":[
+                {
+                   "Ref":"MyIAMRole"
+                }
+             ]
+          }
+       },
+       "applicationSecurityGroup":{
+          "Type":"AWS::EC2::SecurityGroup",
+          "Properties":{
+             "GroupDescription":"Enable HTTP ingress for Application",
+             "SecurityGroupIngress":[
+                {
+                   "CidrIp":"0.0.0.0/0",
+                   "FromPort":"22",
+                   "IpProtocol":"tcp",
+                   "ToPort":"22"
+                },
+                {
+                   "CidrIp":"0.0.0.0/0",
+                   "FromPort":"443",
+                   "IpProtocol":"tcp",
+                   "ToPort":"443"
+                },
+                {
+                   "CidrIp":"0.0.0.0/0",
+                   "FromPort":"80",
+                   "IpProtocol":"tcp",
+                   "ToPort":"80"
+                },
+                {
+                   "CidrIp":"0.0.0.0/0",
+                   "FromPort":"8080",
+                   "IpProtocol":"tcp",
+                   "ToPort":"8080"
+                }
+             ],
+             "Tags":[
+                {
+                   "Key":"Name",
+                   "Value":"applicationSecurityGroup"
+                }
+             ],
+             "VpcId":{
+                "Ref":"myvpcstack"
+             }
+          }
+       },
+       "databaseSecurityGroup":{
+          "Type":"AWS::EC2::SecurityGroup",
+          "Properties":{
+             "GroupDescription":"Enable SSH ingress for Database",
+             "SecurityGroupIngress":[
+                {
+                   "CidrIp":"0.0.0.0/0",
+                   "FromPort":"3306",
+                   "IpProtocol":"tcp",
+                   "ToPort":"3306"
+                }
+             ],
+             "Tags":[
+                {
+                   "Key":"Name",
+                   "Value":"databaseSecurityGroup"
+                }
+             ],
+             "VpcId":{
+                "Ref":"myvpcstack"
+             }
+          }
+       },
+       "MySubnetGroup":{
+          "Type":"AWS::RDS::DBSubnetGroup",
+          "Properties":{
+             "DBSubnetGroupDescription":"My Subnet group",
+             "SubnetIds":[
+                {
+                   "Ref":"mySubnet1"
+                },
+                {
+                   "Ref":"mySubnet2"
+                },
+                {
+                   "Ref":"mySubnet3"
+                }
+             ],
+             "Tags":[
+                {
+                   "Key":"name",
+                   "Value":"SubnetGroup"
+                }
+             ]
+          }
+       },
+       "RDSInstance":{
+          "Type":"AWS::RDS::DBInstance",
+          "DependsOn": [
+            "databaseSecurityGroup"
+          ],
+          "Properties":{
+             "DBInstanceClass":"db.t3.micro",
+             "DBInstanceIdentifier":"csye6225-spring2020",
+             "DBName":"csye6225",
+             "AllocatedStorage": "20",
+             "VPCSecurityGroups":[
+                {
+                   "Ref":"databaseSecurityGroup"
+                }
+             ],
+             "Engine":"MySQL",
+             "MasterUsername":"root",
+             "MasterUserPassword":"root123!",
+             "MultiAZ":"false",
+             "PubliclyAccessible":"true",
+             "DBSubnetGroupName":{
+                "Ref":"MySubnetGroup"
+             }
+          }
+       },
+       "S3Bucket":{
+          "Type":"AWS::S3::Bucket",
+          "Properties":{
+             "AccessControl":"Private",
+             "BucketEncryption": {
+                "ServerSideEncryptionConfiguration": [
+                  {
+                    "ServerSideEncryptionByDefault": {
+                      "SSEAlgorithm": "AES256"
+                    }
+                  }
+                ]
+              },
+              "LifecycleConfiguration": {
+                "Rules": [
+                  { 
+                    "Status": "Enabled",
+                    "Transition": {
+                        "StorageClass" : "STANDARD_IA",
+                        "TransitionInDays" : 30
+                      }
+                  }
+                ]
+              }
+          }
+       },
+       "EC2Instance":{
+          "Type":"AWS::EC2::Instance",
+          "DependsOn": [
+            "applicationSecurityGroup",
+            "MyInstanceProfile",
+            "RDSInstance"
+          ],
+          "Properties":{
+             "IamInstanceProfile":{
+                "Ref":"MyInstanceProfile"
+             },
+             "BlockDeviceMappings":[
+                {
+                   "DeviceName":"/dev/sdh",
+                   "Ebs":{
+                      "DeleteOnTermination":"true",
+                      "Encrypted":"true",
+                      "VolumeSize":"20",
+                      "VolumeType":"gp2"
+                   }
+                }
+             ],
+             "ImageId":{
+                "Ref":"sourceami"
+             },
+             "InstanceType":"t2.micro",
+             "NetworkInterfaces":[
+                {
+                   "DeviceIndex":"0",
+                   "DeleteOnTermination":"true",
+                   "SubnetId":{
+                      "Ref":"mySubnet1"
+                   },
+                   "GroupSet":[
+                      {
+                         "Ref":"applicationSecurityGroup"
+                      }
+                   ]
+                }
+             ],
+             "Tags":[
+                {
+                   "Key":"Name",
+                   "Value":"EC2Instance"
+                }
+             ],
+             "UserData":{
+                "Fn::Base64":{
+                   "Fn::Join":[
+                      "\n",
+                      [
+                         "#!/bin/bash -xe ",
+                         "cd /usr/lib/systemd/system",
+                         "touch tomcat.service",
+                         "echo '[Unit]' > tomcat.service",
+                         "echo 'Description=Apache Tomcat Web Application Container' >> tomcat.service",
+                         "echo 'After=syslog.target network.target' >> tomcat.service",
+                         "echo '[Service]' >> tomcat.service",
+                         "echo 'Type=forking' >> tomcat.service",
+                         "echo 'Environment=JAVA_HOME=/usr/lib/jvm/jre' >> tomcat.service",
+                         "echo 'Environment=CATALINA_PID=/opt/tomcat/temp/tomcat.pid' >> tomcat.service",
+                         "echo 'Environment=CATALINA_HOME=/opt/tomcat' >> tomcat.service",
+                         "echo 'Environment=CATALINA_BASE=/opt/tomcat' >> tomcat.service",
+                         "echo 'Environment=\"CATALINA_OPTS=-Xms512M -Xmx1024M -server -XX:+UseParallelGC\"' >> tomcat.service",
+                         "echo 'Environment=\"JAVA_OPTS=-Djava.awt.headless=true -Djava.security.egd=file:/dev/./urandom\"' >> tomcat.service",
+                         "echo 'ExecStart=/opt/tomcat/bin/startup.sh' >> tomcat.service",
+                         "echo 'ExecStop=/bin/kill -15 $MAINPID' >> tomcat.service",
+                         "echo 'User=tomcat' >> tomcat.service",
+                         "echo 'Group=tomcat' >> tomcat.service",
+                         "echo 'UMask=0007' >> tomcat.service",
+                         "echo 'RestartSec=10' >> tomcat.service",
+                         "echo 'Restart=always' >> tomcat.service",
+                         "echo '[Install]' >> tomcat.service",
+                         "echo 'WantedBy=multi-user.target' >> tomcat.service",
+                         "echo export DB_HOST=",
+                         {
+                            "Fn::GetAtt":[
+                               "RDSInstance",
+                               "Endpoint.Address"
+                            ]
+                         },
+                         " >> /etc/profile \n",
+                         "echo export DB_PORT=",
+                         {
+                            "Fn::GetAtt":[
+                               "RDSInstance",
+                               "Endpoint.Port"
+                            ]
+                         },
+                         " >> /etc/profile \n",
+                         "echo export DB_USERNAME='root' >> /etc/profile \n",
+                         "echo export DB_PASSWORD='root123!' >> /etc/profile \n",
+                         "echo export S3_BUCKET='${S3Bucket}' >> /etc/profile \n",
+                         "systemctl daemon-reload",
+                         "systemctl enable tomcat.service",
+                         "systemctl start tomcat.service"
+                      ]
+                   ]
+                }
+             }
+          }
+       }
+    },
+    "Outputs":{
+ 
+    }
+ }

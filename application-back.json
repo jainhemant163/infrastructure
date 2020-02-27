@@ -1,0 +1,348 @@
+ {
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Cloud Formation Template - CSYE6225 - Setting up Application Resources",
+    "Parameters": {
+        "networkStackName": {
+            "Type": "String"
+        },
+        "VPCName": {
+            "Default": "Test",
+            "Type": "String"
+        },
+        "AMI": {
+            "Description": "AMI Image ID.",
+            "Type": "String"
+        },
+        "s3bucketName": {
+            "Description": "S3BucketName for Bill Management Web App",
+            "Type": "String"
+        },
+        "EC2Size":{
+
+            "Type":"Number"
+
+        },
+        "RDSSize":{
+            "Type":"Number"
+        }     
+    },
+    "Resources": {
+        "MyRDSDB": {
+            "Type": "AWS::RDS::DBInstance",
+            "DeletionPolicy": "Delete",
+            "Properties": {
+                "AllocatedStorage":{
+                "Ref":"RDSSize"
+                },
+                "MultiAZ": "false",
+                "DBInstanceIdentifier": "csye6225-spring2020",
+                "DBInstanceClass": "db.t3.micro",
+                "MasterUsername": "dbuser",
+                "MasterUserPassword": "csye6225password",
+                "Engine": "MySQL",
+                "EngineVersion": "5.6.35",
+                "DBName": "csye6225",
+                "DBSubnetGroupName": {
+                    "Ref": "dbSubnetGroup"
+                },
+                "PubliclyAccessible": true,
+                "VPCSecurityGroups": [
+                    {
+                        "Ref": "DBSecurityGroup"
+                    }
+                ]
+            }
+        },
+        "WebAppS3": {
+            "Type": "AWS::IAM::ManagedPolicy",
+            "Properties": {
+                "ManagedPolicyName": "WebAppS3",
+                "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Action": [
+                                "s3:*"
+                            ],
+                            "Effect": "Allow",
+                            "Resource": [
+                                {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "arn:aws:s3:::",
+                                            {
+                                                "Ref": "s3bucketName"
+                                            },
+                                            "/*"
+                                        ]
+                                    ]
+                                },
+                                {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "arn:aws:s3:::",
+                                            {
+                                                "Ref": "s3bucketName"
+                                            },
+                                            ""
+                                        ]
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+        "EC2CSYE6225": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "RoleName": "EC2CSYE6225",
+                "Path": "/",
+                "ManagedPolicyArns": [
+                    {
+                        "Ref": "WebAppS3"
+                    }
+                ],
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "ec2.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+        "MyInstanceProfile":{
+            "Type": "AWS::IAM::InstanceProfile",
+            "Properties": {
+                "Path": "/",
+                "Roles": [
+                    {
+                        "Ref": "EC2CSYE6225"
+                    }
+                ]
+            }
+
+
+        },
+        "dbSubnetGroup": {
+            "Type": "AWS::RDS::DBSubnetGroup",
+            "Properties": {
+                "DBSubnetGroupDescription": "RDS Subnet Group",
+                "DBSubnetGroupName": "rds",
+                "SubnetIds": [
+
+                        {
+                            "Fn::ImportValue": {
+                                "Fn::Sub": "${VPCName}-subnet-A"
+                            }
+                        },
+                        {
+                            "Fn::ImportValue": {
+                                "Fn::Sub": "${VPCName}-subnet-B"
+                            }
+                        },
+                        {
+                            "Fn::ImportValue": {
+                                "Fn::Sub": "${VPCName}-subnet-C"
+                            }
+                        }
+
+                ]
+            }
+        },
+        "S3Bucket":{
+            "Type":"AWS::S3::Bucket",
+            "Properties":{
+               "AccessControl":"Private",
+               "BucketEncryption": {
+                  "ServerSideEncryptionConfiguration": [
+                    {
+                      "ServerSideEncryptionByDefault": {
+                        "SSEAlgorithm": "AES256"
+                      }
+                    }
+                  ]
+                },
+                "LifecycleConfiguration": {
+                  "Rules": [
+                    { 
+                      "Status": "Enabled",
+                      "Transition": {
+                          "StorageClass" : "STANDARD_IA",
+                          "TransitionInDays" : 30
+                        }
+                    }
+                  ]
+                }
+            }
+         },
+        "EC2Instance": {
+            "Type": "AWS::EC2::Instance",
+            "Properties": {
+                "InstanceType": "t2.micro",
+                "DisableApiTermination": false,
+                "ImageId": {
+                    "Ref": "AMI"
+                },
+                "IamInstanceProfile":{
+                    "Ref" : "MyInstanceProfile"  
+                },
+                "NetworkInterfaces": [
+                    {
+                        "AssociatePublicIpAddress": "true",
+                        "DeviceIndex": "0",
+                        "GroupSet": [
+                            {
+                                "Ref": "WebServerSecurityGroup"
+                            }
+                        ],
+                        "SubnetId": {
+                            "Fn::ImportValue": {
+                                "Fn::Sub": "${VPCName}-subnet-A"
+                            }
+                        }
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "EC2-Server"
+                    }
+                ],
+                "BlockDeviceMappings": [
+                    {
+                        "DeviceName": "/dev/sda1",
+                        "Ebs": {
+                            "VolumeSize": {
+                                "Ref":"EC2Size"
+                            },
+                            "VolumeType": "gp2"
+                        
+                        }
+                    }
+                ],
+                "KeyName": "csye6225-devkey",
+
+               "UserData":{
+                "Fn::Base64":{
+                   "Fn::Join":[
+                      "\n",
+                      [
+                         "#!/bin/bash -xe ",
+                         "cd /usr/lib/systemd/system",
+                         "touch tomcat.service",
+                         "echo '[Unit]' > tomcat.service",
+                         "echo 'Description=Apache Tomcat Web Application Container' >> tomcat.service",
+                         "echo 'After=syslog.target network.target' >> tomcat.service",
+                         "echo '[Service]' >> tomcat.service",
+                         "echo 'Type=forking' >> tomcat.service",
+                         "echo 'Environment=JAVA_HOME=/usr/lib/jvm/jre' >> tomcat.service",
+                         "echo 'Environment=CATALINA_PID=/opt/tomcat/temp/tomcat.pid' >> tomcat.service",
+                         "echo 'Environment=CATALINA_HOME=/opt/tomcat' >> tomcat.service",
+                         "echo 'Environment=CATALINA_BASE=/opt/tomcat' >> tomcat.service",
+                         "echo 'Environment=\"CATALINA_OPTS=-Xms512M -Xmx1024M -server -XX:+UseParallelGC\"' >> tomcat.service",
+                         "echo 'Environment=\"JAVA_OPTS=-Djava.awt.headless=true -Djava.security.egd=file:/dev/./urandom\"' >> tomcat.service",
+                         "echo 'ExecStart=/opt/tomcat/bin/startup.sh' >> tomcat.service",
+                         "echo 'ExecStop=/bin/kill -15 $MAINPID' >> tomcat.service",
+                         "echo 'User=tomcat' >> tomcat.service",
+                         "echo 'Group=tomcat' >> tomcat.service",
+                         "echo 'UMask=0007' >> tomcat.service",
+                         "echo 'RestartSec=10' >> tomcat.service",
+                         "echo 'Restart=always' >> tomcat.service",
+                         "echo '[Install]' >> tomcat.service",
+                         "echo 'WantedBy=multi-user.target' >> tomcat.service",
+                         "echo export DB_HOST=",
+                      
+                         " >> /etc/profile \n",
+                         "echo export DB_PORT=",
+                       
+                         " >> /etc/profile \n",
+                         "echo export DB_USERNAME='dbuser' >> /etc/profile \n",
+                         "echo export DB_PASSWORD='csye6225password' >> /etc/profile \n",
+                         "echo export S3_BUCKET='${S3Bucket}' >> /etc/profile \n",
+                         "systemctl daemon-reload",
+                         "systemctl enable tomcat.service",
+                         "systemctl start tomcat.service"
+                      ]
+                   ]
+                }
+             }
+        }
+    },
+     
+        "WebServerSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Access to ports 22, 80 & 443 for webapp",
+                "GroupName": "csye6225-securitygroup",
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "80",
+                        "ToPort": "80",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "443",
+                        "ToPort": "443",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "FromPort": "8080",
+                        "IpProtocol": "tcp",
+                        "ToPort": "8080"   ,
+                        "CidrIp": "0.0.0.0/0"
+
+                    }
+                ],
+                "VpcId": {
+                    "Fn::ImportValue": {
+                        "Fn::Sub": "VPC"
+                    }
+                }
+            }
+        },
+        "DBSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Creating Security group for webapp using Ingress rules",
+                "GroupName": "csye6225-DBsecuritygroup",
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "3306",
+                        "ToPort": "3306",
+                        "SourceSecurityGroupId": {
+                            "Ref": "WebServerSecurityGroup"
+                        }
+                    }
+                ],
+                "VpcId": {
+                    "Fn::ImportValue": {
+                        "Fn::Sub": "VPC"
+                    }
+                }
+            }
+        }
+    }
+}
