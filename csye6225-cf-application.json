@@ -1,63 +1,90 @@
 {
-    "AWSTemplateFormatVersion":"2010-09-09",
-    "Parameters":{
-       "StackName":{
-          "Type":"String",
-          "Description":"Please enter string for stack name"
-       },
-       "awsregion":{
-          "Type":"String",
-          "Description":"Please enter string for region"
-       },
-       "Subnet1CidrBlock":{
-          "Type":"String",
-          "Description":"Please enter string for Subnet1CidrBlock"
-       },
-       "Subnet2CidrBlock":{
-          "Type":"String",
-          "Description":"Please enter string for Subnet2CidrBlock"
-       },
-       "Subnet3CidrBlock":{
-          "Type":"String",
-          "Description":"Please enter string for Subnet3CidrBlock"
-       },
-       "VPCCidrBlock":{
-          "Type":"String",
-          "Description":"Please enter string for VPCCidrBlock"
-       },
-       "sourceami":{
-          "Type":"String",
-          "Description":"Please enter string for sourceami"
-       },
-       "BucketName":{
-          "Type":"String",
-          "Description":"Please enter string for BucketName"
-       },
-       "AvailabilityZone1":{
-          "Type":"String",
-          "AllowedValues":[
-             "a",
-             "b",
-             "c"
-          ]
-       },
-       "AvailabilityZone2":{
-          "Type":"String",
-          "AllowedValues":[
-             "a",
-             "b",
-             "c"
-          ]
-       },
-       "AvailabilityZone3":{
-          "Type":"String",
-          "AllowedValues":[
-             "a",
-             "b",
-             "c"
-          ]
-       }
-    },
+   "AWSTemplateFormatVersion":"2010-09-09",
+   "Parameters":{
+      "StackName":{
+         "Type":"String",
+         "Description":"Please enter string for stack name"
+      },
+      "awsregion":{
+         "Type":"String",
+         "Description":"Please enter string for region"
+      },
+      "Subnet1CidrBlock":{
+         "Type":"String",
+         "Description":"Please enter string for Subnet1CidrBlock"
+      },
+      "Subnet2CidrBlock":{
+         "Type":"String",
+         "Description":"Please enter string for Subnet2CidrBlock"
+      },
+      "Subnet3CidrBlock":{
+         "Type":"String",
+         "Description":"Please enter string for Subnet3CidrBlock"
+      },
+      "VPCCidrBlock":{
+         "Type":"String",
+         "Description":"Please enter string for VPCCidrBlock"
+      },
+      "sourceami":{
+         "Type":"String",
+         "Description":"Please enter string for sourceami"
+      },
+      "AvailabilityZone1":{
+         "Type":"String",
+         "AllowedValues":[
+            "a",
+            "b",
+            "c"
+         ]
+      },
+      "AvailabilityZone2":{
+         "Type":"String",
+         "AllowedValues":[
+            "a",
+            "b",
+            "c"
+         ]
+      },
+      "AvailabilityZone3":{
+         "Type":"String",
+         "AllowedValues":[
+            "a",
+            "b",
+            "c"
+         ]
+      },
+      "RDSPublicAccessibility":{
+         "Type":"String",
+         "AllowedValues":[
+            "true",
+            "false"
+         ]
+      },
+      "EC2InstanceSize":{
+         "Type":"String",
+         "Description":"Please enter string for EC2InstanceSize"
+      },
+      "RDSInstanceSize":{
+         "Type":"String",
+         "Description":"Please enter string for RDSInstanceSize",
+         "Default":"20"
+      },
+      "KeyName":{
+         "Type":"String",		 
+         "Description":"Please enter string for key"
+		   
+      },
+      "AccessKey":{
+         "Type":"String",		 
+         "Description":"Please enter string for key"
+		   
+      },
+      "SecretKey":{
+         "Type":"String",		 
+         "Description":"Please enter string for key"
+		   
+      }
+   },
     "Resources":{
        "myvpcstack":{
           "Type":"AWS::EC2::VPC",
@@ -268,12 +295,20 @@
                 "Statement":[
                    {
                       "Action":[
-                         "s3:*"
+                        "s3:PutObject",
+                        "s3:GetObject",
+                        "s3:DeleteObject"
                       ],
                       "Effect":"Allow",
                       "Resource":[
-                         "arn:aws:s3:::${S3Bucket}",
-                         "arn:aws:s3:::${S3Bucket}/*"
+                         {
+                           "Fn::Join": ["", ["arn:aws:s3:::",
+                           { "Ref" : "S3Bucket" }]]
+                        },
+                        {
+                           "Fn::Join": ["", ["arn:aws:s3:::",
+                           { "Ref" : "S3Bucket" }, "/*"]]
+                        }
                       ]
                    }
                 ]
@@ -426,7 +461,9 @@
              "DBInstanceClass":"db.t3.micro",
              "DBInstanceIdentifier":"csye6225-spring2020",
              "DBName":"csye6225",
-             "AllocatedStorage": "20",
+             "AllocatedStorage": {
+               "Ref":"RDSInstanceSize"
+            },							  			  
              "VPCSecurityGroups":[
                 {
                    "Ref":"databaseSecurityGroup"
@@ -436,10 +473,18 @@
              "MasterUsername":"root",
              "MasterUserPassword":"root123!",
              "MultiAZ":"false",
-             "PubliclyAccessible":"true",
+             "PubliclyAccessible":{
+               "Ref":"RDSPublicAccessibility"
+            },										 			  
              "DBSubnetGroupName":{
-                "Ref":"MySubnetGroup"
-             }
+                "Ref":"MySubnetGroup"				   
+             },
+            "Tags":[
+               {
+                  "Key":"Name",
+                  "Value":"RDSInstance"
+               }
+            ]
           }
        },
        "S3Bucket":{
@@ -476,26 +521,18 @@
             "RDSInstance"
           ],
           "Properties":{
+			 "KeyName": {"Ref" : "KeyName"},							   
              "IamInstanceProfile":{
                 "Ref":"MyInstanceProfile"
              },
-             "BlockDeviceMappings":[
-                {
-                   "DeviceName":"/dev/sdh",
-                   "Ebs":{
-                      "DeleteOnTermination":"true",
-                      "Encrypted":"true",
-                      "VolumeSize":"20",
-                      "VolumeType":"gp2"
-                   }
-                }
-             ],
-             "ImageId":{
+        
+      		"ImageId":{
                 "Ref":"sourceami"
              },
              "InstanceType":"t2.micro",
              "NetworkInterfaces":[
                 {
+				   "AssociatePublicIpAddress":"true",					
                    "DeviceIndex":"0",
                    "DeleteOnTermination":"true",
                    "SubnetId":{
@@ -521,7 +558,7 @@
                       [ 
                          "#!/bin/bash -xe ",
                         "cd /home/ubuntu \n ",
-                        "sudo echo \"JAVA_OPTS=\\\"\\${JAVA_OPTS} -Dspring.datasource.username=dbuser -Dspring.datasource.password=root123! -Dspring.profiles.active=aws\\\"\" >> /etc/profile \n ",
+                        "sudo echo \"JAVA_OPTS=\\\"\\${JAVA_OPTS} -Dspring.datasource.username=root -Dspring.datasource.password=root123! -Dspring.profiles.active=aws\\\"\" >> /etc/profile \n ",
                         {
                            "Fn::Join" : [ "", 
                               [
@@ -568,7 +605,7 @@
                                        "Endpoint.Address"
                                     ]
                                  },
-                                 ":3306/csye6225spring2020\"' >> /etc/profile \n"
+                                 ":3306/users_database\"' >> /etc/profile \n"
                               ]
                            ]
                         },
@@ -609,10 +646,28 @@
                                "Endpoint.Port"
                             ]
                          },
+						 "sudo echo export profiletype >> /etc/profile \n",
+                                {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "echo awsRDS=jdbc:mysql://",
+                                            {
+                                                "Fn::GetAtt": [
+                                                    "RDSInstance",
+                                                    "Endpoint.Address"
+                                                ]
+                                            },
+                                            ":3306/users_database >> /etc/profile \n"
+                                        ]
+                                    ]
+                                },
                          " >> /etc/profile \n",
-                         "echo export DB_USERNAME='root' >> /etc/profile \n",
-                         "echo export DB_PASSWORD='root123!' >> /etc/profile \n",
-                         "echo export S3_BUCKET='${S3Bucket}' >> /etc/profile \n",
+						 "sudo echo export awsRDS >> /etc/profile \n",
+                         "sudo echo export DB_USERNAME='root' >> /etc/profile \n",
+                         "sudo echo export DB_PASSWORD='root123!' >> /etc/profile \n",
+                         "sudo echo export S3_BUCKET='${S3Bucket}' >> /etc/profile \n",
+						 "source /etc/profile \n",
                          "systemctl daemon-reload",
                          "systemctl enable tomcat.service",
                          "systemctl start tomcat.service"
@@ -621,7 +676,45 @@
                 }
              }
           }
-       }
+       },
+	     "EC2Volume":{
+         "Type":"AWS::EC2::Volume",
+         "Properties":{
+            "AvailabilityZone":{
+               "Fn::GetAtt":[
+                  "EC2Instance",
+                  "AvailabilityZone"
+               ]
+            },
+            "Tags":[
+               {
+                  "Key":"Name",
+                  "Value":"EC2Volume"
+               }
+            ],
+            "VolumeType":"gp2",
+            "Size" : {"Ref" : "EC2InstanceSize"}
+         }
+      },
+      "VolumeAttachment":{
+         "Type":"AWS::EC2::VolumeAttachment",
+         "DependsOn":[
+            "EC2Volume",
+            "EC2Instance"
+         ],
+         "Properties":{
+            "Device":"/dev/sdh",
+            "InstanceId":{
+               "Ref":"EC2Instance"
+            },
+            "VolumeId":{
+               "Ref":"EC2Volume"
+			
+            }
+         }
+      }
+	   
+	   
     },
     "Outputs":{
  
