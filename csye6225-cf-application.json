@@ -460,7 +460,7 @@
           "Properties":{
              "DBInstanceClass":"db.t3.micro",
              "DBInstanceIdentifier":"csye6225-spring2020",
-             "DBName":"csye6225",
+             "DBName":"users_database",
              "AllocatedStorage": {
                "Ref":"RDSInstanceSize"
             },							  			  
@@ -605,10 +605,70 @@
                                        "Endpoint.Address"
                                     ]
                                  },
-                                 ":3306/users_database\"' >> /etc/profile \n"
+                                 ":3306/users_database \"' >> /etc/profile \n"
                               ]
                            ]
                         },
+						
+						 {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "sudo echo bucketName=",
+                                            {
+                                                "Ref": "S3Bucket"
+                                            },
+                                            ">> /etc/profile \n"
+                                        ]
+                                    ]
+                                },
+								{
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "echo awsRDS=",
+                                            {
+                                                "Fn::GetAtt": [
+                                                    "RDSInstance",
+                                                    "Endpoint.Address"
+                                                ]
+                                            },
+                                            ":3306/users_database  >> /etc/profile \n"
+                                        ]
+                                    ]
+                                },
+								    {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "sudo echo accessKey=",
+                                            {
+                                                "Ref": "AccessKey"
+                                            },
+                                            ">> /etc/profile \n"
+                                        ]
+                                    ]
+                                },{
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "sudo echo secretKey=",
+                                            {
+                                                "Ref": "SecretKey"
+                                            },
+                                            ">> /etc/profile \n"
+                                        ]
+                                    ]
+                                },
+						                         
+                         "sudo echo endpointUrl=https://s3.us-east-1.amazonaws.com >> /etc/profile \n",
+						       "sudo echo name=root >> /etc/profile \n",
+                         "sudo echo export name >> /etc/profile \n",
+                         "sudo echo pwd=root123! >> /etc/profile \n",
+                         "sudo echo export pwd >> /etc/profile \n",
+						
+						       "source /etc/profile \n",
+
                          "cd /usr/lib/systemd/system",
                          "touch tomcat.service",
                          "echo '[Unit]' > tomcat.service",
@@ -630,45 +690,9 @@
                          "echo 'RestartSec=10' >> tomcat.service",
                          "echo 'Restart=always' >> tomcat.service",
                          "echo '[Install]' >> tomcat.service",
-                         "echo 'WantedBy=multi-user.target' >> tomcat.service",
-                         "echo export DB_HOST=",
-                         {
-                            "Fn::GetAtt":[
-                               "RDSInstance",
-                               "Endpoint.Address"
-                            ]
-                         },
-                         " >> /etc/profile \n",
-                         "echo export DB_PORT=",
-                         {
-                            "Fn::GetAtt":[
-                               "RDSInstance",
-                               "Endpoint.Port"
-                            ]
-                         },
-						 "sudo echo export profiletype >> /etc/profile \n",
-                                {
-                                    "Fn::Join": [
-                                        "",
-                                        [
-                                            "echo awsRDS=jdbc:mysql://",
-                                            {
-                                                "Fn::GetAtt": [
-                                                    "RDSInstance",
-                                                    "Endpoint.Address"
-                                                ]
-                                            },
-                                            ":3306/users_database >> /etc/profile \n"
-                                        ]
-                                    ]
-                                },
-                         " >> /etc/profile \n",
-						 "sudo echo export awsRDS >> /etc/profile \n",
-                         "sudo echo export DB_USERNAME='root' >> /etc/profile \n",
-                         "sudo echo export DB_PASSWORD='root123!' >> /etc/profile \n",
-                         "sudo echo export S3_BUCKET='${S3Bucket}' >> /etc/profile \n",
-						 "source /etc/profile \n",
-                         "systemctl daemon-reload",
+                         "echo 'WantedBy=multi-user.target' >> tomcat.service",			 
+						 
+						 "systemctl daemon-reload",
                          "systemctl enable tomcat.service",
                          "systemctl start tomcat.service"
                       ]
@@ -713,7 +737,6 @@
             }
          }
       }
-	   
 	   
     },
     "Outputs":{
