@@ -994,7 +994,7 @@
 		 "MyCodeDeployAppGroup":{
          "Type":"AWS::CodeDeploy::Application",
          "Properties":{
-            "ApplicationName":"csye6225-webapp1",
+            "ApplicationName":"csye6225-webapp",
             "ComputePlatform":"Server"
          }
       },
@@ -1004,7 +1004,7 @@
             "ApplicationName":{
                "Ref":"MyCodeDeployAppGroup"
             },
-            "DeploymentGroupName":"csye6225-webapp-deployment1",
+            "DeploymentGroupName":"csye6225-webapp-deployment",
             "ServiceRoleArn":{
                "Fn::GetAtt":[
                   "CodeDeployServiceRole",
@@ -1019,7 +1019,7 @@
                {
                   "Key":"Name",
                   "Type":"KEY_AND_VALUE",
-                  "Value":"MyEC2InstanceForCodeDeploy"
+                  "Value":"EC2Instance"
                }
             ],
             "DeploymentConfigName":"CodeDeployDefault.AllAtOnce",
