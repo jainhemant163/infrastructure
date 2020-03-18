@@ -347,7 +347,7 @@
           "Type":"AWS::IAM::Role",
           "DependsOn": [
             "MyS3Policy",
-			"MyPolicy"
+			   "MyPolicy"
           ],
           "Properties":{
              "RoleName":"EC2-CSYE6225",
@@ -379,8 +379,11 @@
                 },
                {
                   "Ref":"MyPolicy"
-               }
-             ]
+               },
+               "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy",
+               "arn:aws:iam::aws:policy/AmazonEC2RoleforSSM"
+
+            ]
           }
        },
        "MyInstanceProfile":{
@@ -697,12 +700,12 @@
 						 "sudo echo export secretKey  >> /etc/profile \n",
 						 "sudo echo export bucketName  >> /etc/profile \n",
 						 "sudo echo export awsRDS  >> /etc/profile \n",
-                         "sudo echo endpointUrl=https://s3.us-east-1.amazonaws.com >> /etc/profile \n",
+                   "sudo echo endpointUrl=https://s3.us-east-1.amazonaws.com >> /etc/profile \n",
 						 "sudo echo export endpointUrl  >> /etc/profile \n",
 						 "sudo echo name=root >> /etc/profile \n",
-                         "sudo echo export name >> /etc/profile \n",
-                         "sudo echo pwd=root123! >> /etc/profile \n",
-                         "sudo echo export pwd >> /etc/profile \n",
+                   "sudo echo export name >> /etc/profile \n",
+                   "sudo echo pwd=root123! >> /etc/profile \n",
+                   "sudo echo export pwd >> /etc/profile \n",
 						
 						 "source /etc/profile \n",
 						
@@ -731,7 +734,7 @@
                          "echo '[Install]' >> tomcat.service",
                          "echo 'WantedBy=multi-user.target' >> tomcat.service",			 
 						 
-						 "systemctl daemon-reload",
+						       "systemctl daemon-reload",
                          "systemctl enable tomcat.service",
                          "systemctl start tomcat.service"
                       ]
@@ -930,6 +933,45 @@
                 }
             }
         },
+        "lambdaexecutionrole":{
+         "Type":"AWS::IAM::Role",
+         "Properties":{
+             "RoleName":"lambdaRole",
+             "AssumeRolePolicyDocument":{
+                 "Version":"2012-10-17",
+                 "Statement":[{
+                     "Effect":"Allow",
+                     "Principal":{
+                         "Service":["lambda.amazonaws.com"]
+                     },
+                     "Action":["sts:AssumeRole"]
+                 }]
+             },
+             "ManagedPolicyArns":[
+                 "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+                 "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+             ]
+         }
+     },
+     "lambadacloudwatch":{
+     "Type":"AWS::IAM::Policy",
+         "Properties":{
+            "PolicyName":"LambdaLogsPolicy",
+           "Roles":[{"Ref":"lambdaexecutionrole"}],
+           "PolicyDocument":{
+               "Version":"2012-10-17",
+               "Statement":[{
+                   "Action": [
+                       "logs:CreateLogGroup",
+                       "logs:CreateLogStream",
+                       "logs:PutLogEvents"
+                     ],
+                     "Effect": "Allow",
+                     "Resource": "arn:aws:logs:*:*:*"
+                 }]
+            }
+         }
+   },
 
         "CodeDeployServiceRole":{
             "Type":"AWS::IAM::Role",
