@@ -381,7 +381,7 @@
                   "Ref":"MyPolicy"
                },
                "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy",
-               "arn:aws:iam::aws:policy/AmazonEC2RoleforSSM"
+               "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM"
 
             ]
           }
@@ -668,7 +668,7 @@
                                                     "Endpoint.Address"
                                                 ]
                                             },
-                                            ":3306/users_database  >> /etc/profile \n"
+                                            ":3306/users_database >> /etc/profile \n"
                                         ]
                                     ]
                                 },
