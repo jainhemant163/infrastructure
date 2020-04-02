@@ -119,7 +119,7 @@
             "Description": "Please enter string for DomainName"
         },
         "MySNSTopicName": {
-            "Default": "password_reset",
+            "Default": "SNS-Topic-Name",
             "Description": "SNS Topic name",
             "Type": "String"
         },
@@ -895,7 +895,7 @@
                                                 "Ref": "AccountId"
 
                                             },
-                                            ":password_reset >> /etc/profile \n"
+                                            ":SNS-Topic-Name >> /etc/profile \n"
                                         ]
                                     ]
                                 },
@@ -1475,7 +1475,7 @@
                         "Value": "MySampleQueue"
                     }
                 ],
-                "VisibilityTimeout" : 120
+                "VisibilityTimeout" : "120"
             
         }
         },
