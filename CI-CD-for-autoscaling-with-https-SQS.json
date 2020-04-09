@@ -1159,6 +1159,9 @@
                 "AllocatedStorage": {
                     "Ref": "RDSInstanceSize"
                 },
+				"DBParameterGroupName":{
+				    "Ref": "RDSDBParameterGroup"
+				},
                 "VPCSecurityGroups": [{
                         "Ref": "databaseSecurityGroup"
                     }
@@ -1180,6 +1183,16 @@
                 ]
             }
         },
+    "RDSDBParameterGroup": {
+        "Type": "AWS::RDS::DBParameterGroup",
+        "Properties": {
+            "Description": "CloudFormation Sample Database Parameter Group",
+            "Family": "mysql5.7",
+            "Parameters": {
+                "performance_schema": "1"
+            }
+        }
+    },
         "S3Bucket": {
             "Type": "AWS::S3::Bucket",
             "Properties": {
